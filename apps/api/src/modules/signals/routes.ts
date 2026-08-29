@@ -16,6 +16,10 @@ const sendSchema = z.object({
   kind: z.enum(['THINKING_OF_YOU', 'AROUND', 'WAVE']),
 });
 
+function routeParam(value: string | string[]): string {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 async function consumeRateLimit(senderId: string, recipientId: string): Promise<boolean> {
   const key = `signals:rate:${senderId}:${recipientId}`;
   const count = await redis.incr(key);
@@ -53,7 +57,7 @@ signalsRouter.post('/', async (req: AuthRequest, res) => {
 });
 
 signalsRouter.post('/:id/acknowledge', async (req: AuthRequest, res) => {
-  const existing = await getSignal(req.params.id);
+  const existing = await getSignal(routeParam(req.params.id));
   if (!existing || existing.recipientId !== req.userId) return res.status(404).json({ error: 'Signal not found' });
   const signal = await acknowledgeSignal(existing.id, req.userId!);
   if (!signal) return res.status(404).json({ error: 'Signal not found' });
