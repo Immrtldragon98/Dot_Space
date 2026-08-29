@@ -7,6 +7,10 @@ import { createConnection, getConnection, listConnectionRequests, setConnectionS
 export const connectionsRouter = Router();
 connectionsRouter.use(requireAuth);
 
+function routeParam(value: string | string[]): string {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 connectionsRouter.get('/requests', async (req: AuthRequest, res) => {
   res.json({ requests: await listConnectionRequests(req.userId!) });
 });
@@ -28,7 +32,7 @@ connectionsRouter.post('/requests', async (req: AuthRequest, res) => {
 });
 
 connectionsRouter.post('/:id/accept', async (req: AuthRequest, res) => {
-  const connection = await getConnection(req.params.id);
+  const connection = await getConnection(routeParam(req.params.id));
   if (!connection || connection.addressee_id !== req.userId || connection.status !== 'PENDING') {
     return res.status(404).json({ error: 'Pending incoming request not found' });
   }
@@ -36,7 +40,7 @@ connectionsRouter.post('/:id/accept', async (req: AuthRequest, res) => {
 });
 
 connectionsRouter.post('/:id/reject', async (req: AuthRequest, res) => {
-  const connection = await getConnection(req.params.id);
+  const connection = await getConnection(routeParam(req.params.id));
   if (!connection || connection.addressee_id !== req.userId || connection.status !== 'PENDING') {
     return res.status(404).json({ error: 'Pending incoming request not found' });
   }
@@ -44,7 +48,7 @@ connectionsRouter.post('/:id/reject', async (req: AuthRequest, res) => {
 });
 
 connectionsRouter.post('/:id/block', async (req: AuthRequest, res) => {
-  const connection = await getConnection(req.params.id);
+  const connection = await getConnection(routeParam(req.params.id));
   if (!connection || (connection.requester_id !== req.userId && connection.addressee_id !== req.userId)) {
     return res.status(404).json({ error: 'Connection not found' });
   }
