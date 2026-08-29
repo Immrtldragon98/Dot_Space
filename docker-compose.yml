@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dotspace
+      POSTGRES_PASSWORD: dotspace
+      POSTGRES_DB: dotspace
+    ports:
+      - "5432:5432"
+    volumes:
+      - dotspace_pg:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - dotspace_redis:/data
+volumes:
+  dotspace_pg:
+  dotspace_redis:

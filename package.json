@@ -1,0 +1,16 @@
+{
+  "name": "dot-space",
+  "private": true,
+  "version": "0.8.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm --workspace @dot-space/api run dev",
+    "dev:mobile": "npm --workspace @dot-space/mobile run start",
+    "db:migrate": "npm --workspace @dot-space/api run db:migrate"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Dot Space",
+    "slug": "dot-space",
+    "version": "0.8.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.dotspace.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dotspace.app"
+    },
+    "plugins": [
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
