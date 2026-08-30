@@ -15,6 +15,12 @@ app.use(cors());
 app.use(express.json({ limit: '32kb' }));
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'dot-space-api', version: '0.8.0' }));
+app.get('/ready', (_req, res) => {
+  const readiness = app.locals.readiness ?? { database: false, redis: false };
+  const ready = Boolean(readiness.database && readiness.redis);
+  res.status(ready ? 200 : 503).json({ ready, ...readiness });
+});
+
 app.use('/auth', authRouter);
 app.use('/users', usersRouter);
 app.use('/connections', connectionsRouter);
