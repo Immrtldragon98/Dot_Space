@@ -14,6 +14,17 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '32kb' }));
 
+app.get('/', (_req, res) => {
+  const readiness = app.locals.readiness ?? { database: false, redis: false };
+  const ready = Boolean(readiness.database && readiness.redis);
+  res.json({
+    service: 'Dot Space API',
+    version: '0.8.0',
+    status: ready ? 'online' : 'degraded',
+    privacy: 'Presence without surveillance',
+  });
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'dot-space-api', version: '0.8.0' }));
 app.get('/ready', (_req, res) => {
   const readiness = app.locals.readiness ?? { database: false, redis: false };
