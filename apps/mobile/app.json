@@ -2,14 +2,16 @@
   "expo": {
     "name": "Dot Space",
     "slug": "dot-space",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.dotspace.app"
+      "package": "com.dotspace.app",
+      "versionCode": 9
     },
     "ios": {
-      "bundleIdentifier": "com.dotspace.app"
+      "bundleIdentifier": "com.dotspace.app",
+      "buildNumber": "9"
     },
     "plugins": [
       "expo-notifications",
