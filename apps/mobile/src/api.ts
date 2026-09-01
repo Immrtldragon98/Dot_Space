@@ -22,17 +22,24 @@ async function request<T>(path:string, options:RequestInit={}, token?:string):Pr
   const headers:Record<string,string>={'Content-Type':'application/json'};
   if(token) headers.Authorization=`Bearer ${token}`;
   const response=await fetch(`${API_URL}${path}`,{...options,headers:{...headers,...(options.headers??{})}});
-  const data=await response.json(); if(!response.ok) throw new Error(data.error??'Request failed'); return data;
+  if(response.status===204)return undefined as T;
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error??'Request failed');
+  return data;
 }
 
 export const api={
   register:(email:string,password:string,displayName:string)=>request<{token:string;user:User;sessionId:string}>('/auth/register',{method:'POST',body:JSON.stringify({email,password,displayName})}),
   login:(email:string,password:string)=>request<{token:string;user:User;sessionId:string}>('/auth/login',{method:'POST',body:JSON.stringify({email,password})}),
   setStatus:(token:string,humanStatus:HumanStatus,customStatus?:string|null,expiresInMinutes?:number|null)=>request<{user:User}>('/users/me/status',{method:'PATCH',body:JSON.stringify({humanStatus,customStatus,expiresInMinutes})},token),
+  deleteAccount:(token:string)=>request<void>('/users/me',{method:'DELETE'},token),
   space:(token:string)=>request<{self:User&{connectionState:ConnectionState;lastSeenAt:number|null};people:SpacePerson[]}>('/space',{},token),
   requests:(token:string)=>request<{requests:ConnectionRequest[]}>('/connections/requests',{},token),
   addPerson:(token:string,email:string)=>request<{connectionId:string;status:string}>('/connections/requests',{method:'POST',body:JSON.stringify({email})},token),
-  accept:(token:string,id:string)=>request(`/connections/${id}/accept`,{method:'POST'},token), reject:(token:string,id:string)=>request(`/connections/${id}/reject`,{method:'POST'},token),
+  accept:(token:string,id:string)=>request(`/connections/${id}/accept`,{method:'POST'},token),
+  reject:(token:string,id:string)=>request(`/connections/${id}/reject`,{method:'POST'},token),
+  removeConnection:(token:string,id:string)=>request<void>(`/connections/${id}`,{method:'DELETE'},token),
+  blockConnection:(token:string,id:string)=>request(`/connections/${id}/block`,{method:'POST'},token),
   getPrivacy:(token:string,viewerId:string)=>request<{permissions:PrivacyPermissions}>(`/privacy/${viewerId}`,{},token),
   setPrivacy:(token:string,viewerId:string,permissions:PrivacyPermissions)=>request<{permissions:PrivacyPermissions}>(`/privacy/${viewerId}`,{method:'PATCH',body:JSON.stringify(permissions)},token),
   signals:(token:string)=>request<{signals:Signal[]}>('/signals/inbox',{},token),

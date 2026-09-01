@@ -2,14 +2,16 @@
   "expo": {
     "name": "Dot Space",
     "slug": "dot-space",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.dotspace.app"
+      "package": "com.logan98.dotspace",
+      "versionCode": 9
     },
     "ios": {
-      "bundleIdentifier": "com.dotspace.app"
+      "bundleIdentifier": "com.logan98.dotspace",
+      "buildNumber": "9"
     },
     "plugins": [
       "expo-notifications",
@@ -17,7 +19,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
+        "projectId": "35107dc2-3991-4b35-b113-750ff63f2cb0"
       }
     }
   }

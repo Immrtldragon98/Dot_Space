@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../../auth.js';
-import { findUserById, toPublicUser, updateHumanStatus } from './repository.js';
+import { deleteUser, findUserById, toPublicUser, updateHumanStatus } from './repository.js';
 import { getPresenceSnapshot, notifyHumanStatusChanged } from '../../realtime/presence.js';
 
 export const usersRouter = Router();
@@ -31,4 +31,10 @@ usersRouter.patch('/me/status', async (req: AuthRequest, res) => {
   const publicUser = toPublicUser(user);
   await notifyHumanStatusChanged(user.id, publicUser.humanStatus, publicUser.customStatus, publicUser.statusExpiresAt);
   res.json({ user: publicUser });
+});
+
+usersRouter.delete('/me', async (req: AuthRequest, res) => {
+  const deleted = await deleteUser(req.userId!);
+  if (!deleted) return res.status(404).json({ error: 'User not found' });
+  res.status(204).end();
 });
