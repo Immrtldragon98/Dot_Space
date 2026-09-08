@@ -42,17 +42,17 @@ jobs:
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
 
       - name: Collect APK
-        run: cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk Dot-Space-v0.9-debug.apk
+        run: cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk Dot-Space-v0.9.0-android-hotfix1.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Dot-Space-v0.9-Android-APK
-          path: Dot-Space-v0.9-debug.apk
+          name: Dot-Space-v0.9.0-Android-Hotfix1
+          path: Dot-Space-v0.9.0-android-hotfix1.apk
           if-no-files-found: error
           retention-days: 14
 
       - name: Attach APK to GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload v0.9.0 Dot-Space-v0.9-debug.apk --clobber
+        run: gh release upload v0.9.0 Dot-Space-v0.9.0-android-hotfix1.apk --clobber
