@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../../auth.js';
 import { findUserByEmail } from '../users/repository.js';
-import { createConnection, getConnection, listConnectionRequests, setConnectionStatus } from './repository.js';
+import { createConnection, deleteConnection, getConnection, listConnectionRequests, setConnectionStatus } from './repository.js';
 
 export const connectionsRouter = Router();
 connectionsRouter.use(requireAuth);
@@ -53,4 +53,16 @@ connectionsRouter.post('/:id/block', async (req: AuthRequest, res) => {
     return res.status(404).json({ error: 'Connection not found' });
   }
   res.json({ connection: await setConnectionStatus(connection.id, 'BLOCKED', req.userId!) });
+});
+
+connectionsRouter.delete('/:id', async (req: AuthRequest, res) => {
+  const connection = await getConnection(routeParam(req.params.id));
+  if (!connection || (connection.requester_id !== req.userId && connection.addressee_id !== req.userId)) {
+    return res.status(404).json({ error: 'Connection not found' });
+  }
+  if (connection.status === 'BLOCKED') {
+    return res.status(403).json({ error: 'Blocked connections cannot be removed here' });
+  }
+  await deleteConnection(connection.id);
+  res.status(204).end();
 });

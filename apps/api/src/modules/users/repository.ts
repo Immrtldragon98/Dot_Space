@@ -49,6 +49,11 @@ export async function clearExpiredStatuses(): Promise<DbUser[]> {
   return result.rows;
 }
 
+export async function deleteUser(id: string): Promise<boolean> {
+  const result = await db.query('DELETE FROM users WHERE id=$1', [id]);
+  return (result.rowCount ?? 0) > 0;
+}
+
 export function toPublicUser(user: DbUser): PublicUser {
   return { id: user.id, email: user.email, displayName: user.display_name, humanStatus: user.human_status, customStatus: user.custom_status, statusExpiresAt: user.status_expires_at };
 }

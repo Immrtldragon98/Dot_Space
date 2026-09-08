@@ -1,14 +1,17 @@
 {
   "name": "dot-space",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "workspaces": [
     "apps/*"
   ],
   "scripts": {
     "dev:api": "npm --workspace @dot-space/api run dev",
     "dev:mobile": "npm --workspace @dot-space/mobile run start",
-    "db:migrate": "npm --workspace @dot-space/api run db:migrate"
+    "db:migrate": "npm --workspace @dot-space/api run db:migrate",
+    "build:api": "npm --workspace @dot-space/api run build",
+    "typecheck:mobile": "npx tsc --noEmit -p apps/mobile/tsconfig.json",
+    "verify": "npm run build:api && npm run typecheck:mobile"
   },
   "engines": {
     "node": ">=22.13.0"

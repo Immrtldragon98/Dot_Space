@@ -1,7 +1,7 @@
 {
   "name": "@dot-space/mobile",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -15,10 +15,9 @@
     "react": "19.2.3",
     "react-native": "0.86.0",
     "socket.io-client": "^4.8.1",
-    "expo-notifications": "~57.0.14",
     "expo-device": "~57.0.1",
     "expo-constants": "~57.0.15",
-    "expo-secure-store": "^15.0.8"
+    "expo-secure-store": "~57.0.3"
   },
   "devDependencies": {
     "@types/react": "latest",

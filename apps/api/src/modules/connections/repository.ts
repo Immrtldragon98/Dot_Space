@@ -51,6 +51,11 @@ export async function setConnectionStatus(id: string, status: ConnectionStatus, 
   return result.rows[0] ?? null;
 }
 
+export async function deleteConnection(id: string): Promise<boolean> {
+  const result = await db.query('DELETE FROM connections WHERE id=$1', [id]);
+  return (result.rowCount ?? 0) > 0;
+}
+
 export async function listConnectionRequests(userId: string) {
   const result = await db.query<ConnectionRow & PersonRow & { direction: 'INCOMING' | 'OUTGOING' }>(
     `SELECT c.id AS connection_id, c.requester_id, c.addressee_id, c.status, c.acted_by, c.created_at, c.updated_at,
