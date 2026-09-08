@@ -33,7 +33,48 @@ function SpaceScreen({session,onLogout}:{session:Session;onLogout:()=>void}){
   const socketRef=useRef<ReturnType<typeof createRealtime>|null>(null);const appStateRef=useRef(AppState.currentState);const lastInteraction=useRef(Date.now());const stateRef=useRef<Exclude<ConnectionState,'OFFLINE'>>(AppState.currentState==='active'?'ACTIVE':'BACKGROUND');
   const selected=useMemo(()=>people.find(p=>p.id===selectedId)??null,[people,selectedId]);
   async function load(){const[s,r,sg,d]=await Promise.all([api.space(token),api.requests(token),api.signals(token),api.devices(token)]);setUser(s.self);setPeople(s.people);setRequests(r.requests);setSignals(sg.signals);setDevices(d.devices);const pairs=await Promise.all(s.people.map(async p=>[p.id,(await api.getPrivacy(token,p.id)).permissions] as const));setPrivacy(Object.fromEntries(pairs));}
-  useEffect(()=>{(async()=>{const deviceId=await getPersistentDeviceId();let pushToken:string|null=null;try{pushToken=await getPushToken();}catch{}await api.registerDevice(token,{deviceId,deviceName:getDeviceLabel(),platform:Platform.OS==='android'||Platform.OS==='ios'||Platform.OS==='web'?Platform.OS:'unknown',pushToken});setPushState(pushToken?'Push notifications ready':'Push unavailable here; realtime still works');await load();const socket=createRealtime(token,deviceId);socketRef.current=socket;const emit=(state:Exclude<ConnectionState,'OFFLINE'>)=>{stateRef.current=state;if(socket.connected)socket.emit('presence:set',{state});};socket.on('connect',()=>{setLive(true);emit(appStateRef.current==='active'?'ACTIVE':'BACKGROUND');});socket.on('disconnect',()=>setLive(false));socket.on('presence:changed',(e:PresenceChanged)=>setPeople(v=>v.map(p=>p.id===e.userId?{...p,connectionState:e.connectionState,lastSeenAt:e.lastSeenAt}:p)));socket.on('status:changed',(e:StatusChanged)=>setPeople(v=>v.map(p=>p.id===e.userId?{...p,humanStatus:e.humanStatus,customStatus:e.customStatus,statusExpiresAt:e.statusExpiresAt}:p)));socket.on('privacy:changed',()=>void load());socket.on('signal:received',(s:Signal)=>{setSignals(v=>[s,...v].slice(0,30));setNotice(`${signalMeta[s.kind].emoji} ${s.senderDisplayName??'Someone'} · ${signalMeta[s.kind].label}`)});const sub=AppState.addEventListener('change',next=>{appStateRef.current=next;if(next==='active'){lastInteraction.current=Date.now();emit('ACTIVE');}else emit('BACKGROUND');});const idle=setInterval(()=>{if(appStateRef.current==='active'){const next=Date.now()-lastInteraction.current>=IDLE_AFTER_MS?'IDLE':'ACTIVE';if(next!==stateRef.current)emit(next);}},5000);const hb=setInterval(()=>{if(socket.connected)socket.emit('presence:heartbeat',{state:stateRef.current});},20000);return()=>{sub.remove();clearInterval(idle);clearInterval(hb);socket.disconnect();};})().catch(e=>setError(e instanceof Error?e.message:'Could not load your Space'));},[token]);
+  useEffect(()=>{
+    let disposed=false;
+    let appStateSub:{remove:()=>void}|null=null;
+    let idleTimer:ReturnType<typeof setInterval>|null=null;
+    let heartbeatTimer:ReturnType<typeof setInterval>|null=null;
+    let realtime:ReturnType<typeof createRealtime>|null=null;
+
+    (async()=>{
+      const deviceId=await getPersistentDeviceId();
+      let pushToken:string|null=null;
+      try{pushToken=await getPushToken();}catch{}
+      await api.registerDevice(token,{deviceId,deviceName:getDeviceLabel(),platform:Platform.OS==='android'||Platform.OS==='ios'||Platform.OS==='web'?Platform.OS:'unknown',pushToken});
+      if(disposed)return;
+      setPushState(pushToken?'Push notifications ready':'Push unavailable here; realtime still works');
+      await load();
+      if(disposed)return;
+
+      const socket=createRealtime(token,deviceId);
+      realtime=socket;
+      socketRef.current=socket;
+      const emit=(state:Exclude<ConnectionState,'OFFLINE'>)=>{stateRef.current=state;if(socket.connected)socket.emit('presence:set',{state});};
+      socket.on('connect',()=>{setLive(true);emit(appStateRef.current==='active'?'ACTIVE':'BACKGROUND');});
+      socket.on('disconnect',()=>setLive(false));
+      socket.on('presence:changed',(e:PresenceChanged)=>setPeople(v=>v.map(p=>p.id===e.userId?{...p,connectionState:e.connectionState,lastSeenAt:e.lastSeenAt}:p)));
+      socket.on('status:changed',(e:StatusChanged)=>setPeople(v=>v.map(p=>p.id===e.userId?{...p,humanStatus:e.humanStatus,customStatus:e.customStatus,statusExpiresAt:e.statusExpiresAt}:p)));
+      socket.on('privacy:changed',()=>void load());
+      socket.on('signal:received',(s:Signal)=>{setSignals(v=>[s,...v].slice(0,30));setNotice(`${signalMeta[s.kind].emoji} ${s.senderDisplayName??'Someone'} · ${signalMeta[s.kind].label}`)});
+
+      appStateSub=AppState.addEventListener('change',next=>{appStateRef.current=next;if(next==='active'){lastInteraction.current=Date.now();emit('ACTIVE');}else emit('BACKGROUND');});
+      idleTimer=setInterval(()=>{if(appStateRef.current==='active'){const next=Date.now()-lastInteraction.current>=IDLE_AFTER_MS?'IDLE':'ACTIVE';if(next!==stateRef.current)emit(next);}},5000);
+      heartbeatTimer=setInterval(()=>{if(socket.connected)socket.emit('presence:heartbeat',{state:stateRef.current});},20000);
+    })().catch(e=>{if(!disposed)setError(e instanceof Error?e.message:'Could not load your Space');});
+
+    return()=>{
+      disposed=true;
+      appStateSub?.remove();
+      if(idleTimer)clearInterval(idleTimer);
+      if(heartbeatTimer)clearInterval(heartbeatTimer);
+      realtime?.disconnect();
+      if(socketRef.current===realtime)socketRef.current=null;
+    };
+  },[token]);
   async function refresh(){try{setRefreshing(true);setError('');await load();}catch(e){setError(e instanceof Error?e.message:'Refresh failed');}finally{setRefreshing(false);}}
   async function setStatus(h:HumanStatus){try{const r=await api.setStatus(token,h,h==='CUSTOM'?custom:null,h==='CUSTOM'?60:null);setUser(r.user);if(h==='CUSTOM')setCustom('');}catch(e){setError(e instanceof Error?e.message:'Could not update status');}}
   async function sendRequest(){try{await api.addPerson(token,addEmail.trim());setAddEmail('');await load();}catch(e){setError(e instanceof Error?e.message:'Could not send request');}}
